@@ -1,0 +1,44 @@
+import json
+from datetime import datetime
+
+def load_operations(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+def mask_card_number(card_number):
+    if card_number:
+        return f"{card_number[:6]} {card_number[6:10]} ** **** {card_number[-4:]}"
+    return "Нет данных"
+
+def mask_account_number(account_number):
+    if account_number:
+        return f"**{account_number[-4:]}"
+    return "Нет данных"
+
+def format_operation(operation):
+    date = datetime.strptime(operation['date'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%d.%m.%Y')
+    description = operation['description']
+    from_account = mask_card_number(operation.get('from', ''))
+    to_account = mask_account_number(operation['to'])
+    amount = operation['operationAmount']['amount']
+    currency = operation['operationAmount']['currency']
+    
+    return f"{date} {description}\n{from_account} -> {to_account}\n{amount} {currency}"
+
+def get_last_executed_operations(operations, count=5):
+    executed_operations = [op for op in operations if op['state'] == 'EXECUTED']
+    executed_operations.sort(key=lambda x: x['date'], reverse=True)
+    return executed_operations[:count]
+
+def display_operations(operations):
+    for operation in operations:
+        print(format_operation(operation))
+        print()  # Пустая строка между операциями
+
+def main():
+    operations = load_operations('operations.json')
+    last_operations = get_last_executed_operations(operations)
+    display_operations(last_operations)
+
+if __name__ == "__main__":
+    main()
